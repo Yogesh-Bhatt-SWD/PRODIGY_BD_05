@@ -5,6 +5,9 @@ import com.example.usercrudapi.entity.User;
 import com.example.usercrudapi.exception.DuplicateResourceException;
 import com.example.usercrudapi.exception.ResourceNotFoundException;
 import com.example.usercrudapi.repository.UserRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,10 +26,18 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Get all users. Result is cached in the "users" cache (TTL: 10 min).
+     */
+    @Cacheable(value = "users")
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
+    /**
+     * Get a user by ID. Result is cached in the "user" cache (TTL: 30 min).
+     */
+    @Cacheable(value = "user", key = "#id")
     public User getUserById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -34,7 +45,9 @@ public class UserService {
 
     /**
      * Admin-only: create a user with a specified role.
+     * Evicts the "users" list cache since the collection has changed.
      */
+    @CacheEvict(value = "users", allEntries = true)
     public User createUser(User user) {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new DuplicateResourceException(
@@ -55,7 +68,12 @@ public class UserService {
     /**
      * Update a user. Non-admin users can only update their own name, email, and age.
      * Only ADMIN can change roles.
+     * Evicts both the individual user cache and the users list cache.
      */
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true),
+            @CacheEvict(value = "user", key = "#id")
+    })
     public User updateUser(UUID id, User userDetails, User currentUser) {
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
@@ -83,6 +101,14 @@ public class UserService {
         return userRepository.save(existingUser);
     }
 
+    /**
+     * Delete a user.
+     * Evicts both the individual user cache and the users list cache.
+     */
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true),
+            @CacheEvict(value = "user", key = "#id")
+    })
     public void deleteUser(UUID id) {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException("User not found with id: " + id);

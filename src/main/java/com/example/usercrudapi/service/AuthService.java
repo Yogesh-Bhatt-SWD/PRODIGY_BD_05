@@ -8,6 +8,7 @@ import com.example.usercrudapi.entity.User;
 import com.example.usercrudapi.exception.DuplicateResourceException;
 import com.example.usercrudapi.repository.UserRepository;
 import com.example.usercrudapi.security.JwtService;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,7 +35,9 @@ public class AuthService {
 
     /**
      * Register a new user with role USER.
+     * Evicts the "users" list cache since a new user is added.
      */
+    @CacheEvict(value = "users", allEntries = true)
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new DuplicateResourceException(
