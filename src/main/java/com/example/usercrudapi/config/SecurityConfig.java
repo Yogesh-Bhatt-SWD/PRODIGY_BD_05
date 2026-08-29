@@ -56,6 +56,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
 
+                        // Hotel Booking — role-based access
+                        .requestMatchers(HttpMethod.POST, "/api/rooms/search").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/rooms").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.GET, "/api/rooms/my").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.GET, "/api/rooms/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/rooms/**").hasAnyRole("ADMIN", "OWNER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/rooms/**").hasAnyRole("ADMIN", "OWNER")
+                        
+                        .requestMatchers(HttpMethod.POST, "/api/bookings").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/bookings/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/my").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/bookings/room/**").hasAnyRole("ADMIN", "OWNER")
+
                         // GET and PUT /api/users/{id} — fine-grained checks in controller
                         .requestMatchers(HttpMethod.GET, "/api/users/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()

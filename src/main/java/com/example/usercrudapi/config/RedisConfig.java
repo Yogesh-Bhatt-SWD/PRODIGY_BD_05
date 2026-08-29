@@ -34,6 +34,8 @@ public class RedisConfig {
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
         cacheConfigurations.put("users", defaultConfig.entryTtl(Duration.ofMinutes(10)));   // user list: 10 min
         cacheConfigurations.put("user", defaultConfig.entryTtl(Duration.ofMinutes(30)));    // individual user: 30 min
+        cacheConfigurations.put("rooms", defaultConfig.entryTtl(Duration.ofMinutes(5)));    // room list: 5 min
+        cacheConfigurations.put("room", defaultConfig.entryTtl(Duration.ofMinutes(15)));    // individual room: 15 min
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
